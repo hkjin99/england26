@@ -280,10 +280,16 @@ body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);l
 section{margin:32px 0}
 h2{font-family:var(--serif);font-size:1.12rem;color:var(--navy);margin:0 0 12px;display:flex;align-items:center;gap:10px}
 h2:after{content:"";flex:1;height:1px;background:var(--line)}
-.editable{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 15px;min-height:3em;outline:none;transition:.15s;font-size:.97rem}
-.editable:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(44,110,127,.12)}
-.editable:empty:before{content:attr(data-ph);color:#b4a992}
-.dayintro{min-height:4.3em;font-family:var(--serif);font-size:1.05rem}
+.ef{outline:none;transition:.15s;border-radius:7px}
+.ef:empty{display:none}
+.ef:empty:before{content:"";color:#b4a992}
+.dayintro{font-family:var(--serif);font-size:1.05rem;color:var(--ink)}
+body.editing .ef{display:inline-block;min-height:1.2em}
+body.editing .dayintro{display:block;min-height:3em;background:var(--card);box-shadow:inset 0 0 0 1px var(--line);padding:12px 14px;font-size:1.02rem}
+body.editing .ef:not(.dayintro){background:rgba(44,110,127,.07);box-shadow:inset 0 0 0 1px var(--teal);padding:2px 7px}
+body.editing .ef:empty:before{content:attr(data-ph)}
+.loc{display:inline-flex;gap:3px;align-items:baseline}
+body:not(.editing) .loc:has(.locname:empty){display:none}
 .mapimg{width:100%;border-radius:14px;border:1px solid var(--line);display:block;box-shadow:0 2px 4px rgba(0,0,0,.05)}
 .maphint{font-size:.8rem;color:var(--muted);margin-top:8px}
 .moments{display:flex;flex-direction:column;gap:30px}
@@ -291,17 +297,24 @@ h2:after{content:"";flex:1;height:1px;background:var(--line)}
 .mhead{display:flex;gap:11px;align-items:baseline;margin:0 2px 9px;font-size:.84rem;color:var(--muted)}
 .mhead .time{font-weight:700;color:var(--gold);font-variant-numeric:tabular-nums}
 .mhead .tz{font-weight:600;color:var(--muted);font-size:.9em}
-.single img,.grid img{display:block;cursor:zoom-in}
-.single{position:relative;border-radius:14px;overflow:hidden;background:#000;box-shadow:0 2px 4px rgba(0,0,0,.06),0 10px 26px rgba(0,0,0,.09)}
-.single img{width:100%;height:auto}
+.photos{display:grid;gap:8px;grid-template-columns:repeat(3,1fr)}
+.photos[data-n="1"]{grid-template-columns:1fr}
+.photos[data-n="2"],.photos[data-n="4"]{grid-template-columns:repeat(2,1fr)}
+.photo{position:relative;margin:0}
+.photo img{display:block;width:100%;cursor:zoom-in;border-radius:11px;background:#000;box-shadow:0 2px 4px rgba(0,0,0,.06),0 8px 20px rgba(0,0,0,.09)}
+.photos:not([data-n="1"]) .photo img{aspect-ratio:4/3;object-fit:cover}
+.photo img:hover{opacity:.95}
 .pnum{position:absolute;top:8px;left:8px;z-index:6;background:rgba(31,58,95,.82);color:#fff;font-size:.72rem;font-weight:700;line-height:1;padding:4px 7px;border-radius:7px;font-variant-numeric:tabular-nums;pointer-events:none;box-shadow:0 1px 3px rgba(0,0,0,.45)}
-.grid{display:grid;gap:8px}
-.grid.c2{grid-template-columns:repeat(2,1fr)}
-.grid.c3{grid-template-columns:repeat(3,1fr)}
-.grid .tile{position:relative;border-radius:11px;overflow:hidden;background:#000;aspect-ratio:4/3;box-shadow:0 2px 4px rgba(0,0,0,.06),0 6px 16px rgba(0,0,0,.08)}
-.grid .tile img{width:100%;height:100%;object-fit:cover}
-.grid .tile img:hover,.single img:hover{opacity:.95}
-.cap{margin-top:10px;min-height:2.6em}
+.cap{margin-top:7px;font-size:.92rem;color:var(--ink);line-height:1.5;white-space:pre-wrap}
+.cap:empty{display:none}
+body.editing .cap{display:block;min-height:1.3em}
+body.editing .photo{cursor:grab}
+body.editing .photo img{cursor:grab}
+.photo.dragging{opacity:.35}
+.photo.dropbefore::before{content:"";position:absolute;left:-5px;top:0;bottom:0;width:3px;background:var(--teal);border-radius:2px}
+.photo.dropafter::after{content:"";position:absolute;right:-5px;top:0;bottom:0;width:3px;background:var(--teal);border-radius:2px}
+body.editing .photos{outline:2px dashed transparent;outline-offset:5px;border-radius:12px}
+body.editing .photos.dropzone{outline-color:var(--teal)}
 footer{text-align:center;color:var(--muted);font-size:.8rem;margin-top:50px;padding-top:20px;border-top:1px solid var(--line)}
 #lightbox{position:fixed;inset:0;background:rgba(15,12,8,.93);display:none;align-items:center;justify-content:center;z-index:2000;cursor:zoom-out;padding:18px}
 #lightbox img{max-width:92%;max-height:94%;border-radius:8px;box-shadow:0 10px 50px rgba(0,0,0,.6);cursor:pointer}
@@ -312,31 +325,72 @@ footer{text-align:center;color:var(--muted);font-size:.8rem;margin-top:50px;padd
 .lbclose{position:fixed;top:12px;right:14px;z-index:2001;background:rgba(255,255,255,.14);color:#fff;border:none;width:42px;height:42px;border-radius:50%;font-size:1.3rem;cursor:pointer}
 .lbclose:hover{background:rgba(255,255,255,.28)}
 @media(max-width:520px){.lbnav{width:44px;height:44px;font-size:1.6rem}}
-#saveBtn{position:fixed;right:18px;bottom:18px;z-index:1500;background:var(--navy);color:#fff;border:none;border-radius:999px;padding:13px 20px;font-family:var(--sans);font-weight:700;font-size:.9rem;cursor:pointer;box-shadow:0 6px 20px rgba(31,58,95,.4)}
-#saveBtn:hover{background:#163049}
+.topbar{position:fixed;top:9px;right:12px;z-index:1700;display:flex;gap:13px;font-size:.74rem;font-weight:700;letter-spacing:.09em}
+.topbar a{color:var(--muted);text-decoration:none;cursor:pointer;opacity:.5;transition:.15s;padding:3px 2px}
+.topbar a:hover{opacity:1;color:var(--navy)}
+.topbar a.on{opacity:1;color:var(--teal)}
+#editBanner{position:fixed;left:0;right:0;top:0;z-index:1650;background:var(--teal);color:#fff;text-align:center;font-size:.78rem;font-weight:600;padding:5px;display:none}
+body.editing #editBanner{display:block}
+body.editing{padding-top:28px}
 .toast{position:fixed;left:50%;bottom:78px;transform:translateX(-50%) translateY(10px);background:var(--navy);color:#fff;padding:10px 18px;border-radius:999px;font-size:.85rem;font-weight:600;opacity:0;transition:.25s;z-index:1600;pointer-events:none}
 .toast.show{opacity:1;transform:translateX(-50%)}
 .day+.day{margin-top:30px;border-top:3px double var(--line)}
 body.web .pnum{display:none}
+body.web.editing .pnum{display:block}
 .homelink{color:var(--teal);text-decoration:none;font-weight:600}
 .homelink:hover{text-decoration:underline}
 @media(max-width:520px){.cover h1{font-size:2.3rem}.grid.c3{grid-template-columns:repeat(2,1fr)}}
 '''
 
 JS = r'''
+function editing(){return document.body.classList.contains('editing');}
+/* ---- lightbox ---- */
 var LBimgs=[],LBi=0;
-function openLB(el){LBimgs=[].slice.call(document.querySelectorAll('.single img,.grid .tile img'));LBi=LBimgs.indexOf(el);if(LBi<0)LBi=0;showLB();document.getElementById('lightbox').style.display='flex';}
+function openLB(el){if(editing())return;LBimgs=[].slice.call(document.querySelectorAll('.photo img'));LBi=LBimgs.indexOf(el);if(LBi<0)LBi=0;showLB();document.getElementById('lightbox').style.display='flex';}
 function showLB(){var lb=document.getElementById('lightbox');lb.querySelector('img').src=LBimgs[LBi].src;var c=document.getElementById('lbcount');if(c)c.textContent=(LBi+1)+' / '+LBimgs.length;}
 function lbNext(e){if(e){e.stopPropagation();}if(!LBimgs.length)return;LBi=(LBi+1)%LBimgs.length;showLB();}
 function lbPrev(e){if(e){e.stopPropagation();}if(!LBimgs.length)return;LBi=(LBi-1+LBimgs.length)%LBimgs.length;showLB();}
 function closeLB(){document.getElementById('lightbox').style.display='none';}
 document.addEventListener('keydown',function(e){var lb=document.getElementById('lightbox');if(!lb||lb.style.display!=='flex')return;if(e.key==='ArrowRight')lbNext();else if(e.key==='ArrowLeft')lbPrev();else if(e.key==='Escape')closeLB();});
-var KEY=document.body.dataset.key||'journal';
-function store(){var o={};document.querySelectorAll('.editable').forEach(function(e){o[e.dataset.k]=e.innerHTML;});try{localStorage.setItem(KEY,JSON.stringify(o));}catch(e){}}
-(function(){try{var o=JSON.parse(localStorage.getItem(KEY)||'{}');document.querySelectorAll('.editable').forEach(function(e){var v=o[e.dataset.k];if(v&&v.trim()&&!e.innerHTML.trim())e.innerHTML=v;});}catch(e){}})();
-document.querySelectorAll('.editable').forEach(function(e){e.addEventListener('input',store);});
-function toast(m){var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},1900);}
-function saveFile(){store();var html='<!DOCTYPE html>\n'+document.documentElement.outerHTML;var blob=new Blob([html],{type:'text/html'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(document.title||'여행기')+'.html';document.body.appendChild(a);a.click();a.remove();toast('저장됐어요 — 이 파일을 가족과 공유하세요');}
+function toast(m){var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},2200);}
+/* ---- text autosave (this browser only) ---- */
+var KEY=(document.body.dataset.key||'journal')+'_txt';
+function store(){var o={};document.querySelectorAll('.ef').forEach(function(e){o[e.dataset.k]=e.innerHTML;});try{localStorage.setItem(KEY,JSON.stringify(o));}catch(e){}}
+(function(){try{var o=JSON.parse(localStorage.getItem(KEY)||'{}');document.querySelectorAll('.ef').forEach(function(e){var v=o[e.dataset.k];if(v&&v.trim()&&!e.innerHTML.trim())e.innerHTML=v;});}catch(e){}})();
+document.addEventListener('input',function(e){if(e.target.classList&&e.target.classList.contains('ef'))store();});
+/* ---- password (light protection; client-side) ---- */
+function pwhash(s){var h=5381;for(var i=0;i<s.length;i++){h=((h<<5)+h+s.charCodeAt(i))>>>0;}return h.toString(36);}
+function checkPw(act){var cur=document.body.dataset.pwhash||'';
+ if(!cur){var p1=prompt(act+' — 이 여행기를 보호할 비밀번호를 정하세요 (최초 1회):');if(p1===null)return false;if(!p1){alert('비밀번호가 비어 있어요.');return false;}document.body.dataset.pwhash=pwhash(p1);return true;}
+ var p=prompt(act+' — 비밀번호를 입력하세요:');if(p===null)return false;if(pwhash(p)!==cur){alert('비밀번호가 올바르지 않아요.');return false;}return true;}
+/* ---- edit mode ---- */
+function setEditing(on){document.body.classList.toggle('editing',on);
+ document.querySelectorAll('.ef').forEach(function(e){e.contentEditable=on?'true':'false';});
+ document.querySelectorAll('.photo').forEach(function(p){if(on)p.setAttribute('draggable','true');else p.removeAttribute('draggable');});
+ var le=document.getElementById('lnkEdit');if(le){le.textContent=on?'VIEW':'EDIT';le.classList.toggle('on',on);}}
+function toggleEdit(){if(editing()){setEditing(false);toast('보기 모드로 돌아왔어요');return;}if(checkPw('편집'))setEditing(true);}
+function updateCounts(){document.querySelectorAll('.photos').forEach(function(ps){ps.dataset.n=ps.querySelectorAll('.photo').length;});}
+/* ---- save (bake current state to a view-locked file) ---- */
+function saveFile(){if(!checkPw('저장'))return;store();updateCounts();setEditing(false);
+ document.querySelectorAll('.dragging,.dropbefore,.dropafter,.dropzone').forEach(function(e){e.classList.remove('dragging','dropbefore','dropafter','dropzone');});
+ var html='<!DOCTYPE html>\n'+document.documentElement.outerHTML;var blob=new Blob([html],{type:'text/html'});
+ var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(document.title||'여행기')+'.html';document.body.appendChild(a);a.click();a.remove();
+ toast('저장됐어요 — 이 파일을 올리거나 공유하세요');}
+/* ---- drag & drop photos between groups ---- */
+var dragEl=null;
+document.addEventListener('dragstart',function(e){if(!editing())return;var ph=e.target.closest&&e.target.closest('.photo');if(!ph)return;dragEl=ph;ph.classList.add('dragging');e.dataTransfer.effectAllowed='move';try{e.dataTransfer.setData('text/plain','x');}catch(_){}});
+document.addEventListener('dragend',function(){if(dragEl)dragEl.classList.remove('dragging');document.querySelectorAll('.dropbefore,.dropafter,.dropzone').forEach(function(x){x.classList.remove('dropbefore','dropafter','dropzone');});dragEl=null;updateCounts();});
+document.addEventListener('dragover',function(e){if(!dragEl)return;e.preventDefault();e.dataTransfer.dropEffect='move';
+ var ph=e.target.closest&&e.target.closest('.photo');var zone=e.target.closest&&e.target.closest('.photos');
+ document.querySelectorAll('.dropbefore,.dropafter').forEach(function(x){x.classList.remove('dropbefore','dropafter');});
+ document.querySelectorAll('.photos').forEach(function(z){z.classList.toggle('dropzone',z===zone);});
+ if(ph&&ph!==dragEl){var r=ph.getBoundingClientRect();ph.classList.add((e.clientX-r.left)>r.width/2?'dropafter':'dropbefore');}});
+document.addEventListener('drop',function(e){if(!dragEl)return;e.preventDefault();
+ var ph=e.target.closest&&e.target.closest('.photo');var zone=e.target.closest&&e.target.closest('.photos');
+ if(ph&&ph!==dragEl){var r=ph.getBoundingClientRect();if((e.clientX-r.left)>r.width/2)ph.after(dragEl);else ph.before(dragEl);}
+ else if(zone){zone.appendChild(dragEl);}
+ document.querySelectorAll('.dropbefore,.dropafter,.dropzone').forEach(function(x){x.classList.remove('dropbefore','dropafter','dropzone');});
+ updateCounts();});
 '''
 
 def esc(s): return html.escape(s, quote=True)
@@ -366,20 +420,19 @@ def render_moment(g, gi, daykey, primary_date=None, forced_label=None, kst_idx=N
         trange=_mdlabel(cmp_date)+trange
     tzhtml=' <span class="tz">(한국시간)</span>' if kst else ''
     loc=forced_label or MANUAL_LABEL.get(p0["file"]) or (nearest_landmark(p0["lat"],p0["lon"]) if p0["lat"] else "")
-    lochtml=('<span class="loc">📍 '+esc(loc)+'</span>') if loc else ''
-    head='<div class="mhead"><span class="time">'+esc(trange)+tzhtml+'</span>'+lochtml+'</div>'
+    mid=daykey+'_m'+str(gi)
+    head=('<div class="mhead"><span class="time">'+esc(trange)+tzhtml+'</span>'
+          '<span class="loc">📍 <span class="locname ef" data-k="'+mid+'_name" data-ph="장소 이름">'+esc(loc)+'</span></span></div>')
     n=len(g)
-    if n==1:
-        p=g[0]
-        body=('<div class="single"><span class="pnum">'+str(p["idx"])+'</span>'
-              '<img src="'+p["uri"]+'" loading="lazy" alt="" onclick="openLB(this)"></div>')
-    else:
-        cols='c2' if n in (2,4) else 'c3'
-        tiles=''.join('<div class="tile"><span class="pnum">'+str(p["idx"])+'</span>'
-                      '<img src="'+p["uri"]+'" loading="lazy" alt="" onclick="openLB(this)"></div>' for p in g)
-        body='<div class="grid '+cols+'">'+tiles+'</div>'
-    cap='' if WEB else '<div class="cap editable" contenteditable="true" data-k="'+daykey+'_g'+str(gi)+'" data-ph="이 장면의 이야기를 적어보세요…"></div>'
-    return '<div class="moment">'+head+body+cap+'</div>'
+    photos=''
+    for p in g:
+        photos+=('<figure class="photo" data-k="'+daykey+'_p'+str(p["idx"])+'">'
+                 '<span class="pnum">'+str(p["idx"])+'</span>'
+                 '<img src="'+p["uri"]+'" loading="lazy" alt="" draggable="false" onclick="openLB(this)">'
+                 '<figcaption class="cap ef" data-k="'+daykey+'_c'+str(p["idx"])+'" data-ph="사진 설명…"></figcaption>'
+                 '</figure>')
+    body='<div class="photos" data-n="'+str(n)+'">'+photos+'</div>'
+    return '<div class="moment" id="'+mid+'">'+head+body+'</div>'
 
 def render_day_block(day_no, date_label, subtitle, files, daykey, start_idx, forced=None, kst_idx=None):
     """Render one day as a stacked block (header + story + map + photos). Returns (html, next_idx, ngroups)."""
@@ -401,8 +454,7 @@ def render_day_block(day_no, date_label, subtitle, files, daykey, start_idx, for
     h='<section class="day" id="'+daykey+'">'
     h+='<header class="cover"><div class="eyebrow">LONDON FAMILY TRIP · 2026</div>'
     h+='<h1>'+esc(date_label)+'</h1><div class="subt">'+esc(subtitle)+'</div></header>'
-    if not WEB:
-        h+='<section><h2>이 날의 이야기</h2><div class="dayintro editable" contenteditable="true" data-k="'+daykey+'_intro" data-ph="이 날 전체의 느낌을 자유롭게 적어보세요."></div></section>'
+    h+='<section><h2>이 날의 이야기</h2><div class="dayintro ef" data-k="'+daykey+'_intro" data-ph="이 날 전체의 느낌을 자유롭게 적어보세요."></div></section>'
     h+=mapsec
     h+='<section><h2>사진과 기록</h2><div class="moments">'+moments+'</div></section>'
     h+='</section>'
@@ -415,10 +467,11 @@ def render_page(title, blocks_html, pagekey):
     doc+='<title>'+esc(title)+'</title>'
     doc+='<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;500;700&display=swap">'
     doc+='<style>'+CSS+'</style></head>'
-    doc+='<body class="'+('web' if WEB else '')+'" data-key="journal_'+pagekey+'">'
+    doc+='<body class="'+('web' if WEB else '')+'" data-key="journal_'+pagekey+'" data-pwhash="">'
+    doc+='<div id="editBanner">편집 모드 — 글·장소 이름 수정, 사진을 끌어 옮길 수 있어요. 끝나면 SAVE</div>'
+    doc+='<div class="topbar"><a id="lnkEdit" onclick="toggleEdit()">EDIT</a><a id="lnkSave" onclick="saveFile()">SAVE</a></div>'
     doc+='<div class="page">'+blocks_html
-    foot=('런던 가족 여행기 · 2026' if WEB else
-          '직접 쓴 이야기는 오른쪽 아래 <b>저장</b> 버튼으로 파일에 담아 가족과 공유하세요.')
+    foot='런던 가족 여행기 · 2026'
     doc+='<footer>'+foot+'</footer></div>'
     doc+=('<div id="lightbox" onclick="closeLB()">'
           '<div id="lbcount" class="lbcount"></div>'
@@ -427,8 +480,6 @@ def render_page(title, blocks_html, pagekey):
           '<img src="" alt="" onclick="lbNext(event)">'
           '<button class="lbnav lbnext" onclick="lbNext(event)" aria-label="다음">›</button>'
           '</div>')
-    if not WEB:
-        doc+='<button id="saveBtn" onclick="saveFile()">💾 저장 (공유용 파일 만들기)</button>'
     doc+='<div class="toast" id="toast"></div>'
     doc+='<script>'+JS+'</script></body></html>'
     return doc
